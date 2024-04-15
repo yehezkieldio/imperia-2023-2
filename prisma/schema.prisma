@@ -1,0 +1,210 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["jsonProtocol"]
+}
+
+model User {
+  id              String           @id @default(cuid())
+  discordId       String
+  UserEconomy     UserEconomy?
+  UserProgression UserProgression?
+  createdAt       DateTime         @default(now()) @db.Timestamptz()
+  UserCard        UserCard[]
+  UserCardDeck    UserCardDeck[]
+  WishHistory     WishHistory[]
+
+  @@unique([discordId])
+  @@map("users")
+}
+
+model UserEconomy {
+  id       String @id @default(cuid())
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String
+  crystals Int    @default(0)
+  fates    Int    @default(0)
+
+  @@unique([userId])
+  @@map("user_economy")
+}
+
+model UserProgression {
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  level  Int    @default(1)
+  exp    Int    @default(0)
+
+  @@unique([userId])
+  @@map("user_progression")
+}
+
+model Card {
+  id                String             @id @default(cuid())
+  name              String
+  stock             Int
+  element           ElementType
+  CardBaseStatistic CardBaseStatistic?
+  RarityCard        RarityCard[]
+  UserCard          UserCard[]
+  Wish              Wish[]
+  WishHistory       WishHistory[]
+
+  @@index([name])
+  @@map("cards")
+}
+
+model CardBaseStatistic {
+  id     String @id @default(cuid())
+  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  cardId String
+  hp     Int
+  atk    Int
+  def    Int
+  spd    Int
+  mana   Int
+
+  @@unique([cardId])
+  @@map("card_base_statistics")
+}
+
+enum ElementType {
+  FIRE
+  WATER
+  ICE
+  LIGHTNING
+  EARTH
+  NATURE
+  WIND
+}
+
+model Rarity {
+  id             String           @id @default(cuid())
+  name           RarityType
+  probability    Int              @default(0)
+  RarityCard     RarityCard[]
+  RarityUserCard RarityUserCard[]
+
+  @@unique([name])
+  @@map("rarities")
+}
+
+enum RarityType {
+  COMMON
+  RARE
+  SUPER_RARE
+  SPECIALLY_SUPER_RARE
+  ULTRA_RARE
+}
+
+model RarityCard {
+  id       String @id @default(cuid())
+  Rarity   Rarity @relation(fields: [rarityId], references: [id])
+  rarityId String
+  Card     Card   @relation(fields: [cardId], references: [id])
+  cardId   String
+
+  @@index([rarityId, cardId])
+  @@map("rarity_cards")
+}
+
+model UserCard {
+  id             String           @id @default(cuid())
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  card           Card             @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  cardId         String
+  RarityUserCard RarityUserCard[]
+
+  @@index([userId, cardId])
+  @@map("user_cards")
+}
+
+model RarityUserCard {
+  id                  String               @id @default(cuid())
+  quantity            Int                  @default(0)
+  userCard            UserCard             @relation(fields: [userCardId], references: [id], onDelete: Cascade)
+  userCardId          String
+  rarity              Rarity               @relation(fields: [rarityId], references: [id])
+  rarityId            String
+  UserCardStatistic   UserCardStatistic?
+  UserCardProgression UserCardProgression?
+  UserCardDeck        UserCardDeck[]
+
+  @@index([userCardId, rarityId])
+  @@map("rarity_user_cards")
+}
+
+model UserCardStatistic {
+  id             String         @id @default(cuid())
+  RarityUserCard RarityUserCard @relation(fields: [userCardId], references: [id], onDelete: Cascade)
+  userCardId     String
+  hp             Int
+  atk            Int
+  def            Int
+  spd            Int
+  mana           Int
+
+  @@unique([userCardId])
+  @@map("user_card_statistics")
+}
+
+model UserCardProgression {
+  id             String         @id @default(cuid())
+  RarityUserCard RarityUserCard @relation(fields: [userCardId], references: [id], onDelete: Cascade)
+  userCardId     String
+  level          Int            @default(1)
+  exp            Int            @default(0)
+
+  @@unique([userCardId])
+  @@map("user_card_progression")
+}
+
+model UserCardDeck {
+  id             String         @id @default(cuid())
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  RarityUserCard RarityUserCard @relation(fields: [userCardId], references: [id], onDelete: Cascade)
+  userCardId     String
+  position       Int
+
+  @@index([userId, userCardId])
+  @@map("user_card_decks")
+}
+
+model Wish {
+  id           String        @id @default(cuid())
+  name         String
+  description  String
+  cost         Int           @default(1)
+  rarityWeight Json?
+  Card         Card[]
+  WishHistory  WishHistory[]
+  createdAt    DateTime      @default(now()) @db.Timestamptz()
+  updatedAt    DateTime      @updatedAt @db.Timestamptz()
+
+  @@index([name])
+  @@map("wishes")
+}
+
+model WishHistory {
+  id         String     @id @default(cuid())
+  rarity     RarityType
+  isSoftPity Boolean
+  isHardPity Boolean
+  Card       Card       @relation(fields: [cardId], references: [id])
+  cardId     String
+  User       User       @relation(fields: [userId], references: [id])
+  userId     String
+  Wish       Wish       @relation(fields: [wishId], references: [id])
+  wishId     String
+  createdAt  DateTime   @default(now()) @db.Timestamptz()
+
+  @@index([rarity, userId, wishId])
+  @@map("wish_history")
+}

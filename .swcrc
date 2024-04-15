@@ -1,0 +1,28 @@
+{
+    "$schema": "https://json.schemastore.org/swcrc",
+    "jsc": {
+        "minify": {
+            "compress": {
+                "unused": true
+            },
+            "mangle": true
+        },
+        "parser": {
+            "syntax": "typescript",
+            "decorators": false
+        },
+        "target": "es2020",
+        "baseUrl": "./src",
+        "paths": {
+            "#/extensions/*": ["./lib/extensions/*"],
+            "#/typings/*": ["./lib/typings/*"],
+            "#/commands/*": ["./commands/*"],
+            "#/listeners/*": ["./listeners/*"],
+            "#/utilities/*": ["./utilities/*"],
+            "#/utils/*": ["./lib/utils/*"]
+        }
+    },
+    "module": {
+        "type": "commonjs"
+    }
+}
